@@ -53,7 +53,7 @@ dvnll = open(devnull, 'wb')
 # Functions
 def average(p): return sum(p) / float(len(p))
 
-def variance(p): return map(lambda x: (x - average(p))**2, p)
+def variance(p): return [(x - average(p))**2 for x in p]
 
 def std_dev(p): return sqrt(average(variance(p)))
 
@@ -73,7 +73,7 @@ def bline_build(fmin, fmax, bins, b_time, offset, bpath):
 
 	for line in iter(base_gen.stdout.readline, b""):
 
-		with open(baseline_path, 'a') as baselinefile: baselinefile.write(str(line))
+		with open(baseline_path, 'a') as baselinefile: baselinefile.write(line.decode("utf-8"))
 
 # Start your engines...
 if __name__ == '__main__':
@@ -108,13 +108,11 @@ if __name__ == '__main__':
 		rpf = sp.Popen([powerfftw_path, spect, otherargs, ppm, fftbins, baseline_file], stdout=sp.PIPE, stderr=dvnll, shell=False)
 
 		# Let's see what's going on with rtl_power_fftw
-		for line in iter(rpf.stdout.readline, b""):
-
+		for line in iter(rpf.stdout.readline, ''):
+			line = line.decode("utf-8")
 			# Ignore garbage output
 			if not ('#' in line or not line.strip()):
-
-				floats = map(float, line.split())
-
+				floats = list(map(float, line.split()))
 				# Create 2D array if it isn't already defined
 				if len(rolling) < totalbins: rolling.append(deque([]))
 
