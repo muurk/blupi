@@ -10,6 +10,7 @@ import subprocess as sp
 from os import devnull
 from collections import deque
 from math import sqrt
+from alert.dot3k import dot3k as alert_module
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -35,6 +36,11 @@ args = parser.parse_args()
 if args.debug is True:
 	logger.setLevel(logging.DEBUG)
 
+
+logger.debug("Starting Alerting Module")
+alerting = alert_module()
+
+
 # Global variables until we have a config file
 freqmin = args.freqmin
 freqmax = args.freqmax
@@ -53,15 +59,19 @@ dvnll = open(devnull, 'wb')
 # Functions
 def average(p): return sum(p) / float(len(p))
 
-def variance(p): return map(lambda x: (x - average(p))**2, p)
+def variance(p): return [(x - average(p))**2 for x in p]
 
 def std_dev(p): return sqrt(average(variance(p)))
 
-def alert(p):
+def old_alert(p):
 
 	# Still developing...need to provide true alert functionality (GPIO, audio, etc)
 	freq = round(p[0] /1000000, 4)
 	logger.debug("At " + time.strftime("%H:%M:%S") + ", a " + str(round(p[1], 1)) + " dB/Hz signal was detected at " + str(freq) + " MHz.")
+
+	#alerting.queue.put(time.strftime("%H:%M:%S") + ": " + str(round(p[1], 1)) + "dB/Hz at " + str(freq) + " MHz.")
+
+	alerting.message(title="**** DETECTED ****", body=time.strftime("%H:%M:%S"), data=str(round(p[1], 1)) + "dB/Hz at " + str(freq) + " MHz.")
 
 def bline_build(fmin, fmax, bins, b_time, offset, bpath):
 	t = "-t " + str(b_time)
@@ -73,7 +83,7 @@ def bline_build(fmin, fmax, bins, b_time, offset, bpath):
 
 	for line in iter(base_gen.stdout.readline, b""):
 
-		with open(baseline_path, 'a') as baselinefile: baselinefile.write(str(line))
+		with open(baseline_path, 'a') as baselinefile: baselinefile.write(line.decode("utf-8"))
 
 # Start your engines...
 if __name__ == '__main__':
@@ -108,13 +118,11 @@ if __name__ == '__main__':
 		rpf = sp.Popen([powerfftw_path, spect, otherargs, ppm, fftbins, baseline_file], stdout=sp.PIPE, stderr=dvnll, shell=False)
 
 		# Let's see what's going on with rtl_power_fftw
-		for line in iter(rpf.stdout.readline, b""):
-
+		for line in iter(rpf.stdout.readline, ''):
+			line = line.decode("utf-8")
 			# Ignore garbage output
 			if not ('#' in line or not line.strip()):
-
-				floats = map(float, line.split())
-
+				floats = list(map(float, line.split()))
 				# Create 2D array if it isn't already defined
 				if len(rolling) < totalbins: rolling.append(deque([]))
 
@@ -131,7 +139,7 @@ if __name__ == '__main__':
 					# There be coppers!
 					if floats[1] > alarmthresh:
 
-						alert(floats)
+						old_alert(floats)
 
 				# Maintain sweep length at the total number of samples
 				if len(sweep) > totalbins: sweep.popleft()
