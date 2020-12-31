@@ -4,10 +4,12 @@ import logging
 import time
 
 class Message(object):
-    def __init__(self, body, title="Message", data="", priority=10):
+    def __init__(self, body, title="Message", data="", priority=10, warning=False):
         self.priority = priority
         self.title = title
         self.body = body
+        self.data = data
+        self.warning = warning
 
         return
 
@@ -16,6 +18,8 @@ class Message(object):
 
 class BaseAlert(object):
     def __init__(self):
+        self.start_time = time.time()
+        self.message_count = 0
         self.refresh_time = float() 
         self.log = logging.getLogger(__name__)
         self.log.setLevel(logging.DEBUG)
@@ -25,10 +29,16 @@ class BaseAlert(object):
         self.start()
         self.update_refresh_time() 
 
+    def get_runtime(self):
+        return "%i s" % (int(time.time() - self.start_time))
+
     def update_refresh_time(self):
         self.refresh_time = time.time()
 
     def message(self, **kwargs):
+
+        self.message_count += 1
+
         try:
             m = Message(**kwargs)
             self.queue.put(m)
@@ -67,7 +77,10 @@ class BaseAlert(object):
         #thread.join()
         self.log.debug("Alert Queue Running")
 
+    def idle_message(self):
+        return Message(title="     Ready", body="", data="")
+        
     def refresh_display(self):
-        if time.time() - self.refresh_time >= 60:
-            self.ready() 
+        if time.time() - self.refresh_time >= 10:
+            self.display_message(message=self.idle_message())
             self.refresh_time = time.time()

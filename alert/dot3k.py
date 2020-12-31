@@ -26,11 +26,16 @@ class dot3k(BaseAlert):
 
     def display_message(self, message):
         lcd.clear()
-        backlight.rgb(255,0,0)
+
+        if message.warning is True:
+            backlight.rgb(255,0,0)
+        else:
+            backlight.rgb(255,255,255)
+
         lcd.set_cursor_position(0,0)
-        lcd.write(message.title)
+        lcd.write("%s / %s" % (self.message_count, self.get_runtime()))
         lcd.set_cursor_position(0,1)
-        lcd.write(message.body)
+        lcd.write(message.title)
         lcd.set_cursor_position(0,2)
         lcd.write(message.data)
 

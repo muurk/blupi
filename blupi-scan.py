@@ -18,8 +18,10 @@ logger = logging.getLogger(__name__)
 parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 required_params = parser.add_argument_group("Required Arguments")
 optional_params = parser.add_argument_group("Optional Arguments")
-optional_params.add_argument('--freqmin', help="Minimum Frequency", type=int, default=854000000)
-optional_params.add_argument('--freqmax', help="Maximum Frequency", type=int, default=860000000)
+#optional_params.add_argument('--freqmin', help="Minimum Frequency", type=int, default=854000000)
+#optional_params.add_argument('--freqmax', help="Maximum Frequency", type=int, default=860000000)
+optional_params.add_argument('--freqmin', help="Minimum Frequency", type=int, default=380000000)
+optional_params.add_argument('--freqmax', help="Maximum Frequency", type=int, default=385000000)
 optional_params.add_argument('--sensitivity', help="Sensitivity", type=int, default=50)
 optional_params.add_argument('--sysdamping', help="Sysdamping", type=int, default=10)
 optional_params.add_argument('--freqdamping', help="Freqdamping", type=int, default=100)
@@ -71,7 +73,7 @@ def old_alert(p):
 
 	#alerting.queue.put(time.strftime("%H:%M:%S") + ": " + str(round(p[1], 1)) + "dB/Hz at " + str(freq) + " MHz.")
 
-	alerting.message(title="**** DETECTED ****", body=time.strftime("%H:%M:%S"), data=str(round(p[1], 1)) + "dB/Hz at " + str(freq) + " MHz.")
+	alerting.message(title="**** DETECTED ****", body=time.strftime("%H:%M:%S"), data=str(round(p[1], 1)) + "dB/Hz at " + str(freq) + " MHz.", warning=True)
 
 def bline_build(fmin, fmax, bins, b_time, offset, bpath):
 	t = "-t " + str(b_time)
